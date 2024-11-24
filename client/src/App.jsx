@@ -12,6 +12,7 @@ import ProfilePage from "./pages/ProfilePage/ProfilePage";
 import LoginPage from "./pages/LoginPage/LoginPage";
 import RegisterPage from "./pages/RegisterPage/RegisterPage";
 import ChatsPage from "./pages/ChatsPage/ChatsPage"; // Импортируем страницу чатов
+import CreateStartupPage from "./pages/CreateStartupPage/CreateStartupPage";
 
 function App() {
   const isAuthenticated = !!localStorage.getItem("authToken"); // Проверка авторизации
@@ -21,6 +22,8 @@ function App() {
       <Header />
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/create-startup" element={<CreateStartupPage />} />{" "}
+        {/* Страница для создания стартапа */}
         <Route path="/startups" element={<StartupsPage />} />
         <Route
           path="/profile"

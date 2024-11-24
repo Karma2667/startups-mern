@@ -7,6 +7,7 @@ const config = require("./config");
 const authRoutes = require("./routes/auth");
 const profileRoutes = require("./routes/profile");
 const chatRoutes = require("./routes/chats");
+const startupRoutes = require("./routes/startups");
 
 const app = express();
 
@@ -29,6 +30,9 @@ app.use(bodyParser.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes); // Подключаем роуты профиля
 app.use("/api/chats", chatRoutes);
+app.use("/api/startups", startupRoutes);
+// В сервере Express добавьте эту строку
+app.use("/uploads", express.static("uploads"));
 
 // Запуск сервера
 const port = 5000;

@@ -10,6 +10,7 @@ const ProfilePage = () => {
   const [editing, setEditing] = useState(false); // Режим редактирования
   const navigate = useNavigate();
 
+  // Получение данных пользователя
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -18,8 +19,9 @@ const ProfilePage = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        setUser(response.data);
-        setDescription(response.data.description || "");
+        setUser(response.data); // Обновляем стейт с новыми данными
+        setDescription(response.data.description || ""); // Устанавливаем описание
+        setAvatar(response.data.avatar || ""); // Устанавливаем аватар (если он есть)
       } catch (err) {
         console.error(err);
         navigate("/login"); // Если ошибка, возвращаем на страницу логина
@@ -29,7 +31,6 @@ const ProfilePage = () => {
     fetchUserData();
   }, [navigate]);
 
-  // Обновление профиля
   const handleProfileUpdate = async () => {
     try {
       const token = localStorage.getItem("authToken");
@@ -43,20 +44,27 @@ const ProfilePage = () => {
       formData.append("description", description);
 
       const response = await axios.put(
-        "http://localhost:5000/api/profile/update",
+        "http://localhost:5000/api/profile",
         formData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${token}`, // Передача токена
+            Authorization: `Bearer ${token}`,
           },
         }
       );
 
-      setUser(response.data); // Обновление данных на странице
-      setEditing(false);
+      console.log("Обновленный профиль:", response.data); // Логируем обновленный профиль
+
+      // Обновляем данные на фронте
+      setUser({
+        ...user,
+        avatar: response.data.avatar || user.avatar, // Обновляем аватар
+        description: response.data.description || user.description, // Обновляем описание
+      });
+      setEditing(false); // Выход из режима редактирования
     } catch (err) {
-      console.error(err);
+      console.error("Ошибка при обновлении профиля:", err);
       alert("Ошибка обновления профиля");
     }
   };
@@ -80,7 +88,7 @@ const ProfilePage = () => {
       const { chatId } = response.data;
       navigate(`/chats/${chatId}`); // Переход в чат
     } catch (err) {
-      console.error(err);
+      console.error("Ошибка при создании чата:", err);
       alert("Ошибка при создании чата");
     }
   };
@@ -91,6 +99,12 @@ const ProfilePage = () => {
     navigate("/login"); // Перенаправление на страницу логина
   };
 
+  // Переход на страницу создания стартапа
+  const handleCreateStartup = () => {
+    navigate("/create-startup"); // Переход на страницу создания стартапа
+  };
+
+  // Убедимся, что профиль загружается
   if (!user) return <div>Загрузка профиля...</div>;
 
   return (
@@ -104,8 +118,9 @@ const ProfilePage = () => {
             <div className="avatar-container mb-4">
               <img
                 src={
-                  user.avatar ||
-                  "https://via.placeholder.com/150/cccccc/ffffff?text=Avatar"
+                  user.avatar
+                    ? `${user.avatar}?${new Date().getTime()}` // Добавляем уникальный параметр для предотвращения кэширования
+                    : "https://via.placeholder.com/150/cccccc/ffffff?text=Avatar"
                 }
                 alt="Avatar"
                 style={{
@@ -115,6 +130,7 @@ const ProfilePage = () => {
                   objectFit: "cover",
                 }}
               />
+
               {editing && (
                 <Form.Group className="mt-3">
                   <Form.Label>Загрузить аватарку</Form.Label>
@@ -179,6 +195,17 @@ const ProfilePage = () => {
             <Button variant="danger" onClick={handleLogout} className="mt-4">
               Выйти
             </Button>
+
+            {/* Кнопка создания стартапа, показывается только если пользователь стартапер */}
+            {user.isStartup && (
+              <Button
+                variant="success"
+                onClick={handleCreateStartup}
+                className="mt-4"
+              >
+                Создать стартап
+              </Button>
+            )}
           </div>
         </div>
 
