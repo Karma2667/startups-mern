@@ -1,0 +1,10 @@
+.StartupsPage {
+  height: calc(100vh - 60px); /* Высота на весь экран */
+  padding: 0;
+  margin-top: 0; /* Убираем маржин */
+  padding-top: 70px; /* Отступ для компенсации фиксированного навбара */
+  color: #fff;
+}
+.card {
+  width: 18rem;
+}
