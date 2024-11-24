@@ -1,126 +1,143 @@
-import React, { useState } from "react";
-import { Container, Row, Col, Form, Button } from "react-bootstrap";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const LoginPage = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState(""); // состояние для имени
-  const [role, setRole] = useState("investor"); // состояние для роли
-  const [error, setError] = useState("");
-  const [isRegister, setIsRegister] = useState(false);
+const ProfilePage = () => {
+  const [user, setUser] = useState(null); // Данные пользователя
+  const [avatar, setAvatar] = useState(null); // Для загрузки аватарки
+  const [description, setDescription] = useState(""); // Описание профиля
+  const [editing, setEditing] = useState(false); // Режим редактирования
   const navigate = useNavigate();
 
-  // Обработка логина
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/api/profile", {
+          withCredentials: true, // Авторизация через токен или куки
+        });
+
+        setUser(response.data);
+        setDescription(response.data.description || "");
+      } catch (err) {
+        console.error(err);
+        navigate("/login"); // Если пользователь не авторизован
+      }
+    };
+
+    fetchUserData();
+  }, [navigate]);
+
+  // Обновление профиля
+  const handleProfileUpdate = async () => {
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/auth/login",
+      const formData = new FormData();
+      if (avatar) formData.append("avatar", avatar);
+      formData.append("description", description);
+
+      const response = await axios.put(
+        "http://localhost:5000/api/profile/update",
+        formData,
         {
-          email,
-          password,
+          withCredentials: true,
+          headers: { "Content-Type": "multipart/form-data" },
         }
       );
-      const { token } = response.data;
-      localStorage.setItem("authToken", token); // Сохраняем токен в localStorage
-      navigate("/profile"); // Переход на страницу профиля
-    } catch (error) {
-      setError("Invalid email or password"); // Ошибка при логине
+
+      setUser(response.data); // Обновление данных на странице
+      setEditing(false);
+    } catch (err) {
+      console.error(err);
+      alert("Ошибка обновления профиля");
     }
   };
 
-  // Обработка регистрации
-  const handleRegister = async (e) => {
-    e.preventDefault();
+  // Создание или переход в чат
+  const handleSendMessage = async () => {
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/auth/register",
-        { email, password, name, role }
+        "http://localhost:5000/api/chats/create",
+        { recipientId: user.id },
+        { withCredentials: true }
       );
-      const { token } = response.data;
-      localStorage.setItem("authToken", token); // Сохраняем токен в localStorage
-      navigate("/profile"); // Переход на страницу профиля
-    } catch (error) {
-      setError(
-        "Error registering user: " +
-          (error.response?.data?.message || error.message)
-      ); // Ошибка при регистрации
+      const { chatId } = response.data;
+      navigate(`/chats/${chatId}`); // Переход в чат
+    } catch (err) {
+      console.error(err);
+      alert("Ошибка при создании чата");
     }
   };
 
-  // Переключение между формами логина и регистрации
-  const handleToggle = () => {
-    setIsRegister(!isRegister);
-    setError(""); // очищаем ошибку при переключении форм
-  };
+  if (!user) return <div>Загрузка профиля...</div>;
 
   return (
-    <Container className="vh-100 d-flex justify-content-center align-items-center">
-      <Row className="w-100">
-        <Col md={6} className="d-flex justify-content-center">
-          <Form onSubmit={isRegister ? handleRegister : handleLogin}>
-            <Form.Group controlId="formEmail">
-              <Form.Label>Email</Form.Label>
-              <Form.Control
-                type="email"
-                placeholder="Enter email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </Form.Group>
-            <Form.Group controlId="formPassword">
-              <Form.Label>Password</Form.Label>
-              <Form.Control
-                type="password"
-                placeholder="Enter password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </Form.Group>
-            {isRegister && (
-              <>
-                <Form.Group controlId="formName">
-                  <Form.Label>Name</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Enter your name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </Form.Group>
-                <Form.Group controlId="formRole">
-                  <Form.Label>Role</Form.Label>
-                  <Form.Control
-                    as="select"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    required
-                  >
-                    <option value="investor">Investor</option>
-                    <option value="startuper">Startuper</option>
-                  </Form.Control>
-                </Form.Group>
-              </>
-            )}
-            {error && <p className="text-danger">{error}</p>}
-            <Button variant="primary" type="submit">
-              {isRegister ? "Register" : "Login"}
-            </Button>
-            <Button variant="secondary" onClick={handleToggle} className="ms-2">
-              {isRegister
-                ? "Already have an account? Login"
-                : "Don't have an account? Register"}
-            </Button>
-          </Form>
-        </Col>
-      </Row>
-    </Container>
+    <div className="container mt-5">
+      <h1>Профиль пользователя</h1>
+      <div className="profile-info">
+        <img
+          src={user.avatar || "default-avatar.png"}
+          alt="Avatar"
+          style={{ width: "150px", height: "150px", borderRadius: "50%" }}
+        />
+        {editing ? (
+          <>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setAvatar(e.target.files[0])}
+            />
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows="4"
+              cols="50"
+              placeholder="Введите описание"
+            ></textarea>
+            <button className="btn btn-success" onClick={handleProfileUpdate}>
+              Сохранить изменения
+            </button>
+          </>
+        ) : (
+          <>
+            <h3>{user.name}</h3>
+            <p>{user.description || "Описание отсутствует"}</p>
+            <button
+              className="btn btn-primary"
+              onClick={() => setEditing(true)}
+            >
+              Редактировать профиль
+            </button>
+          </>
+        )}
+      </div>
+      <div className="profile-history mt-5">
+        <h2>История инвестиций</h2>
+        {user.investments && user.investments.length > 0 ? (
+          <ul>
+            {user.investments.map((investment) => (
+              <li key={investment.id}>
+                {investment.projectName} — {investment.amount} USD
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>Инвестиций пока нет</p>
+        )}
+        <h2>Стартапы</h2>
+        {user.startups && user.startups.length > 0 ? (
+          <ul>
+            {user.startups.map((startup) => (
+              <li key={startup.id}>{startup.name}</li>
+            ))}
+          </ul>
+        ) : (
+          <p>Стартапы пока не созданы</p>
+        )}
+      </div>
+      <button className="btn btn-secondary mt-3" onClick={handleSendMessage}>
+        Send Message
+      </button>
+    </div>
   );
 };
 
-export default LoginPage;
+export default ProfilePage;

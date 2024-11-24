@@ -1,38 +1,50 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginUser } from "../../services/authService";
+import { registerUser } from "../../services/authService";
 import { Container, Row, Col, Form, Button, Alert } from "react-bootstrap";
 
-const Login = () => {
+const RegisterPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("investor");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    console.log("Logging in with:", { email, password }); // Логирование данных перед отправкой
     try {
-      console.log("Logging in with:", { email, password }); // Логируем данные запроса
-      const token = await loginUser(email, password);
-      console.log("Received token:", token); // Логируем полученный токен
+      const { token } = await registerUser(email, password, name, role);
       localStorage.setItem("authToken", token); // Сохраняем токен
       navigate("/profile"); // Перенаправление в профиль
     } catch (err) {
-      console.error("Login error:", err); // Логируем ошибку
-      setError(err?.response?.data?.message || "Invalid email or password");
+      setError(
+        "Error registering user: " +
+          (err.response?.data?.message || err.message)
+      );
     }
   };
 
   return (
     <Container className="vh-100 d-flex justify-content-center align-items-center">
       <Row className="w-100">
-        <Col md={6} lg={5} xl={4} className="mx-auto">
-          {" "}
-          {/* Центрируем столбец */}
-          <h2 className="text-center mb-4">Login</h2>
+        <Col md={8} lg={6} xl={5} className="mx-auto">
+          {/* Увеличиваем размер столбца и добавляем центрирование */}
+          <h2 className="text-center mb-4">Register</h2>
           {error && <Alert variant="danger">{error}</Alert>}
-          <Form onSubmit={handleLogin}>
+          <Form onSubmit={handleRegister}>
+            <Form.Group controlId="formName" className="mb-3">
+              <Form.Label>Name</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Enter your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="w-100"
+              />
+            </Form.Group>
+
             <Form.Group controlId="formEmail" className="mb-3">
               <Form.Label>Email</Form.Label>
               <Form.Control
@@ -57,14 +69,27 @@ const Login = () => {
               />
             </Form.Group>
 
+            <Form.Group controlId="formRole" className="mb-4">
+              <Form.Label>Role</Form.Label>
+              <Form.Select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                required
+                className="w-100"
+              >
+                <option value="investor">Investor</option>
+                <option value="startuper">Startuper</option>
+              </Form.Select>
+            </Form.Group>
+
             <Button variant="primary" type="submit" className="w-100 mb-3">
-              Login
+              Register
             </Button>
           </Form>
           <p className="text-center">
-            Don't have an account?{" "}
-            <a href="/register" className="text-decoration-none">
-              Register
+            Already have an account?{" "}
+            <a href="/login" className="text-decoration-none">
+              Login
             </a>
           </p>
         </Col>
@@ -73,4 +98,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default RegisterPage;

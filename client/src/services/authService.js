@@ -4,13 +4,8 @@ import axios from "axios";
 export const registerUser = async (email, password, name, role) => {
   try {
     const response = await axios.post(
-      "http://localhost:5000/api/auth/register",
-      {
-        email,
-        password,
-        name,
-        role,
-      }
+      "http://localhost:5000/api/auth/register", // Серверный эндпоинт
+      { email, password, name, role }
     );
     return response.data; // Возвращаем ответ с токеном
   } catch (error) {
@@ -25,8 +20,9 @@ export const loginUser = async (email, password) => {
       email,
       password,
     });
-    return response.data.token; // Возвращаем токен
-  } catch (error) {
-    throw new Error(error.response?.data?.message || "Login failed");
+    return response.data.token;
+  } catch (err) {
+    console.error("Login error:", err); // Логирование ошибки
+    throw err; // Пробрасываем ошибку
   }
 };
