@@ -4,7 +4,9 @@ const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const config = require("./config");
-const authRoutes = require("./routes/auth"); // Подключаем роуты
+const authRoutes = require("./routes/auth");
+const profileRoutes = require("./routes/profile");
+const chatRoutes = require("./routes/chats");
 
 const app = express();
 
@@ -15,11 +17,18 @@ mongoose
   .catch((err) => console.log("Failed to connect to MongoDB:", err));
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000", // разрешаем доступ с этого адреса
+    credentials: true,
+  })
+);
 app.use(bodyParser.json());
 
-// Подключаем маршруты авторизации
-app.use("/api/auth", authRoutes); // Подключаем роуты
+// Подключаем маршруты
+app.use("/api/auth", authRoutes);
+app.use("/api/profile", profileRoutes); // Подключаем роуты профиля
+app.use("/api/chats", chatRoutes);
 
 // Запуск сервера
 const port = 5000;

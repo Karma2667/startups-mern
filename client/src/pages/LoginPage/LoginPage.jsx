@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { loginUser } from "../../services/authService";
 import { Container, Row, Col, Form, Button, Alert } from "react-bootstrap";
 
-const Login = () => {
+const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -17,7 +17,9 @@ const Login = () => {
       const token = await loginUser(email, password);
       console.log("Received token:", token); // Логируем полученный токен
       localStorage.setItem("authToken", token); // Сохраняем токен
-      navigate("/profile"); // Перенаправление в профиль
+      console.log(localStorage.getItem("authToken"));
+      console.log("Navigating to /profile");
+      navigate("/profile");
     } catch (err) {
       console.error("Login error:", err); // Логируем ошибку
       setError(err?.response?.data?.message || "Invalid email or password");
@@ -73,4 +75,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default LoginPage;

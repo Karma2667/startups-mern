@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { Button, Form } from "react-bootstrap";
 
 const ProfilePage = () => {
   const [user, setUser] = useState(null); // Данные пользователя
@@ -12,15 +13,16 @@ const ProfilePage = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
+        const token = localStorage.getItem("authToken");
         const response = await axios.get("http://localhost:5000/api/profile", {
-          withCredentials: true, // Авторизация через токен или куки
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         setUser(response.data);
         setDescription(response.data.description || "");
       } catch (err) {
         console.error(err);
-        navigate("/login"); // Если пользователь не авторизован
+        navigate("/login"); // Если ошибка, возвращаем на страницу логина
       }
     };
 
@@ -30,6 +32,12 @@ const ProfilePage = () => {
   // Обновление профиля
   const handleProfileUpdate = async () => {
     try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
       const formData = new FormData();
       if (avatar) formData.append("avatar", avatar);
       formData.append("description", description);
@@ -38,8 +46,10 @@ const ProfilePage = () => {
         "http://localhost:5000/api/profile/update",
         formData,
         {
-          withCredentials: true,
-          headers: { "Content-Type": "multipart/form-data" },
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`, // Передача токена
+          },
         }
       );
 
@@ -54,10 +64,18 @@ const ProfilePage = () => {
   // Создание или переход в чат
   const handleSendMessage = async () => {
     try {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
       const response = await axios.post(
         "http://localhost:5000/api/chats/create",
         { recipientId: user.id },
-        { withCredentials: true }
+        {
+          headers: { Authorization: `Bearer ${token}` }, // Передача токена
+        }
       );
       const { chatId } = response.data;
       navigate(`/chats/${chatId}`); // Переход в чат
@@ -67,75 +85,144 @@ const ProfilePage = () => {
     }
   };
 
+  // Выход из профиля
+  const handleLogout = () => {
+    localStorage.removeItem("authToken"); // Удаление токена из localStorage
+    navigate("/login"); // Перенаправление на страницу логина
+  };
+
   if (!user) return <div>Загрузка профиля...</div>;
 
   return (
     <div className="container mt-5">
-      <h1>Профиль пользователя</h1>
-      <div className="profile-info">
-        <img
-          src={user.avatar || "default-avatar.png"}
-          alt="Avatar"
-          style={{ width: "150px", height: "150px", borderRadius: "50%" }}
-        />
-        {editing ? (
-          <>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setAvatar(e.target.files[0])}
-            />
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows="4"
-              cols="50"
-              placeholder="Введите описание"
-            ></textarea>
-            <button className="btn btn-success" onClick={handleProfileUpdate}>
-              Сохранить изменения
-            </button>
-          </>
-        ) : (
-          <>
-            <h3>{user.name}</h3>
-            <p>{user.description || "Описание отсутствует"}</p>
-            <button
-              className="btn btn-primary"
-              onClick={() => setEditing(true)}
+      <h1 className="text-center mb-5">Профиль пользователя</h1>
+      <div className="row">
+        {/* Левая колонка: Аватарка, имя, описание, кнопка редактирования профиля и кнопка отправки сообщения */}
+        <div className="col-md-6">
+          <div className="d-flex flex-column align-items-start">
+            {/* Аватарка и кнопка загрузки */}
+            <div className="avatar-container mb-4">
+              <img
+                src={
+                  user.avatar ||
+                  "https://via.placeholder.com/150/cccccc/ffffff?text=Avatar"
+                }
+                alt="Avatar"
+                style={{
+                  width: "150px",
+                  height: "150px",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                }}
+              />
+              {editing && (
+                <Form.Group className="mt-3">
+                  <Form.Label>Загрузить аватарку</Form.Label>
+                  <Form.Control
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setAvatar(e.target.files[0])}
+                  />
+                </Form.Group>
+              )}
+            </div>
+
+            {/* Имя пользователя и описание */}
+            <div className="user-details mb-4">
+              {editing ? (
+                <div>
+                  <h3>
+                    <input
+                      type="text"
+                      value={user.name}
+                      onChange={(e) =>
+                        setUser({ ...user, name: e.target.value })
+                      }
+                      className="form-control"
+                    />
+                  </h3>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows="4"
+                    className="form-control"
+                  ></textarea>
+                  <Button
+                    variant="success"
+                    onClick={handleProfileUpdate}
+                    className="mt-3"
+                  >
+                    Сохранить изменения
+                  </Button>
+                </div>
+              ) : (
+                <div>
+                  <h3>{user.name}</h3>
+                  <p>{user.description || "Описание отсутствует"}</p>
+                  <Button variant="primary" onClick={() => setEditing(true)}>
+                    Редактировать профиль
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Кнопка отправки сообщения */}
+            <Button
+              variant="secondary"
+              onClick={handleSendMessage}
+              className="mt-4"
             >
-              Редактировать профиль
-            </button>
-          </>
-        )}
+              Отправить сообщение
+            </Button>
+
+            {/* Кнопка выхода */}
+            <Button variant="danger" onClick={handleLogout} className="mt-4">
+              Выйти
+            </Button>
+          </div>
+        </div>
+
+        {/* Правая колонка: История инвестиций или стартапов */}
+        <div className="col-md-6">
+          <div>
+            {user.investments && user.investments.length > 0 ? (
+              <>
+                <h2>История инвестиций</h2>
+                <ul>
+                  {user.investments.map((investment) => (
+                    <li key={investment.id}>
+                      {investment.projectName} — {investment.amount} USD
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <>
+                <h2>История инвестиций</h2>
+                <p>Инвестиций пока нет</p>
+              </>
+            )}
+          </div>
+
+          <div>
+            {user.startups && user.startups.length > 0 ? (
+              <>
+                <h2>История стартапов</h2>
+                <ul>
+                  {user.startups.map((startup) => (
+                    <li key={startup.id}>{startup.name}</li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <>
+                <h2>История стартапов</h2>
+                <p>Стартапы пока не созданы</p>
+              </>
+            )}
+          </div>
+        </div>
       </div>
-      <div className="profile-history mt-5">
-        <h2>История инвестиций</h2>
-        {user.investments && user.investments.length > 0 ? (
-          <ul>
-            {user.investments.map((investment) => (
-              <li key={investment.id}>
-                {investment.projectName} — {investment.amount} USD
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>Инвестиций пока нет</p>
-        )}
-        <h2>Стартапы</h2>
-        {user.startups && user.startups.length > 0 ? (
-          <ul>
-            {user.startups.map((startup) => (
-              <li key={startup.id}>{startup.name}</li>
-            ))}
-          </ul>
-        ) : (
-          <p>Стартапы пока не созданы</p>
-        )}
-      </div>
-      <button className="btn btn-secondary mt-3" onClick={handleSendMessage}>
-        Send Message
-      </button>
     </div>
   );
 };

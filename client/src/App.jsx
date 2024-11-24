@@ -1,4 +1,3 @@
-// src/App.js
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -12,6 +11,7 @@ import StartupsPage from "./pages/StartupsPage/StartupsPage";
 import ProfilePage from "./pages/ProfilePage/ProfilePage";
 import LoginPage from "./pages/LoginPage/LoginPage";
 import RegisterPage from "./pages/RegisterPage/RegisterPage";
+import ChatsPage from "./pages/ChatsPage/ChatsPage"; // Импортируем страницу чатов
 
 function App() {
   const isAuthenticated = !!localStorage.getItem("authToken"); // Проверка авторизации
@@ -22,12 +22,21 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/startups" element={<StartupsPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
         <Route
           path="/profile"
           element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />}
+        />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        {/* Новый маршрут для страницы чатов */}
+        <Route
+          path="/chats"
+          element={isAuthenticated ? <ChatsPage /> : <Navigate to="/login" />}
+        />
+        {/* Пример маршрута для чата по ID */}
+        <Route
+          path="/chats/:chatId"
+          element={isAuthenticated ? <ChatsPage /> : <Navigate to="/login" />}
         />
       </Routes>
     </Router>

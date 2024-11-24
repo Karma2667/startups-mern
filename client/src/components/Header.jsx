@@ -1,7 +1,16 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export const Header = () => {
+  const navigate = useNavigate();
+  const isAuthenticated = !!localStorage.getItem("authToken"); // Проверка авторизации
+
+  // Функция для выхода
+  const handleLogout = () => {
+    localStorage.removeItem("authToken"); // Удаление токена из localStorage
+    navigate("/login"); // Перенаправление на страницу логина
+  };
+
   return (
     <nav
       className="fixed-top navbar navbar-expand-lg bg-body-tertiary bg-dark border-bottom border-body"
@@ -29,21 +38,47 @@ export const Header = () => {
                 Home
               </Link>
             </li>
-            <li className="nav-item">
-              <a className="nav-link" href="#">
-                Chats
-              </a>
-            </li>
+            {/* Пункт для чатов, показывается только если пользователь авторизован */}
+            {isAuthenticated && (
+              <li className="nav-item">
+                <Link className="nav-link" to="/chats">
+                  Chats
+                </Link>
+              </li>
+            )}
             <li className="nav-item">
               <Link className="nav-link" to="/startups">
                 Startups
               </Link>
             </li>
-            <li className="nav-item">
-              <Link className="nav-link" to="/profile">
-                Profile
-              </Link>
-            </li>
+            {/* Если пользователь авторизован, показываем ссылку на профиль, иначе - на страницу логина */}
+            {isAuthenticated ? (
+              <>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/profile">
+                    Profile
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <a className="nav-link" onClick={handleLogout}>
+                    Logout
+                  </a>
+                </li>
+              </>
+            ) : (
+              <>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/login">
+                    Login
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/register">
+                    Register
+                  </Link>
+                </li>
+              </>
+            )}
           </ul>
         </div>
       </div>
